@@ -17,6 +17,8 @@ services:
           property: connectionString
       - key: FRONTEND_URL
         value: http://localhost:3000
+      - key: FRONTEND_ORIGIN_SUFFIXES
+        value: .vercel.app
 
 databases:
   - name: marketops-db
