@@ -1,0 +1,21 @@
+{
+  "name": "marketops-localcraft",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Backend-heavy ecommerce pet project with NestJS, Prisma, PostgreSQL and Next.js.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev:api & npm run dev:web",
+    "dev:api": "npm run dev --workspace @marketops/api",
+    "dev:web": "npm run dev --workspace @marketops/web",
+    "db:generate": "npm --workspace @marketops/api run prisma:generate",
+    "db:migrate": "npm --workspace @marketops/api run prisma:migrate --",
+    "db:studio": "npm --workspace @marketops/api run prisma:studio"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

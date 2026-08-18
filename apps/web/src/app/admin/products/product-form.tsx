@@ -1,0 +1,178 @@
+'use client';
+
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
+const productSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Product name is required')
+    .max(120, 'Product name must be 120 characters or less'),
+  price: z.preprocess(
+    (value) =>
+      value === '' || value === undefined || value === null
+        ? undefined
+        : Number(value),
+    z
+      .number({
+        required_error: 'Product price is required',
+        invalid_type_error: 'Product price must be a number',
+      })
+      .positive('Product price must be greater than 0')
+      .max(999999.99, 'Product price is too high'),
+  ),
+  description: z
+    .string()
+    .trim()
+    .max(1000, 'Description must be 1000 characters or less')
+    .optional(),
+});
+
+type ProductFormValues = z.infer<typeof productSchema>;
+
+export type Product = {
+  id: string;
+  name: string;
+  price: string;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type ProductFormProps = {
+  onCreated?: (product: Product) => void;
+  onCancel?: () => void;
+};
+
+function getErrorMessage(error: unknown) {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'errors' in error &&
+    error.errors &&
+    typeof error.errors === 'object'
+  ) {
+    const fieldErrors = Object.values(error.errors).flat();
+    const firstError = fieldErrors.find((item) => typeof item === 'string');
+
+    if (typeof firstError === 'string') {
+      return firstError;
+    }
+  }
+
+  if (
+    error &&
+    typeof error === 'object' &&
+    'message' in error &&
+    typeof error.message === 'string'
+  ) {
+    return error.message;
+  }
+
+  return 'Product was not created';
+}
+
+export function ProductForm({ onCancel, onCreated }: ProductFormProps) {
+  const [serverMessage, setServerMessage] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ProductFormValues>({
+    resolver: zodResolver(productSchema),
+    defaultValues: {
+      name: '',
+      price: undefined,
+      description: '',
+    },
+  });
+
+  async function onSubmit(values: ProductFormValues) {
+    setServerMessage(null);
+    setServerError(null);
+
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+    const response = await fetch(`${apiUrl}/api/products`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(values),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      setServerError(getErrorMessage(error));
+      return;
+    }
+
+    const product = (await response.json()) as Product;
+    setServerMessage(`Created product: ${product.name}`);
+    onCreated?.(product);
+    reset();
+  }
+
+  return (
+    <form className="product-form" onSubmit={handleSubmit(onSubmit)}>
+      <div className="field">
+        <label htmlFor="name">Product name</label>
+        <input
+          id="name"
+          type="text"
+          placeholder="Handmade Ceramic Mug"
+          aria-invalid={Boolean(errors.name)}
+          {...register('name')}
+        />
+        {errors.name ? <p className="field-error">{errors.name.message}</p> : null}
+      </div>
+
+      <div className="field">
+        <label htmlFor="price">Price</label>
+        <input
+          id="price"
+          type="number"
+          min="0.01"
+          step="0.01"
+          placeholder="28.00"
+          aria-invalid={Boolean(errors.price)}
+          {...register('price')}
+        />
+        {errors.price ? (
+          <p className="field-error">{errors.price.message}</p>
+        ) : null}
+      </div>
+
+      <div className="field">
+        <label htmlFor="description">Description</label>
+        <textarea
+          id="description"
+          rows={5}
+          placeholder="Short product description"
+          aria-invalid={Boolean(errors.description)}
+          {...register('description')}
+        />
+        {errors.description ? (
+          <p className="field-error">{errors.description.message}</p>
+        ) : null}
+      </div>
+
+      <div className="dialog-actions">
+        <button className="button" type="button" onClick={onCancel}>
+          Cancel
+        </button>
+        <button className="button primary" type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Creating...' : 'Create product'}
+        </button>
+      </div>
+
+      {serverMessage ? <p className="form-success">{serverMessage}</p> : null}
+      {serverError ? <p className="field-error">{serverError}</p> : null}
+    </form>
+  );
+}
