@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: marketops-api
+    runtime: node
+    region: frankfurt
+    plan: free
+    buildCommand: npm install --include=dev && npm run db:generate && npm --workspace @marketops/api run build && npm --workspace @marketops/api run prisma:deploy
+    startCommand: npm --workspace @marketops/api run start
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: DATABASE_URL
+        fromDatabase:
+          name: marketops-db
+          property: connectionString
+      - key: FRONTEND_URL
+        value: http://localhost:3000
+
+databases:
+  - name: marketops-db
+    region: frankfurt
+    plan: free
+    databaseName: marketops_localcraft
+    user: marketops
