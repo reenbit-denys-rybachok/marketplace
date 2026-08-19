@@ -8,6 +8,9 @@ export class ProductsService {
 
   findAll() {
     return this.prisma.product.findMany({
+      include: {
+        category: true,
+      },
       orderBy: {
         createdAt: 'desc',
       },
@@ -19,6 +22,7 @@ export class ProductsService {
       data: {
         name: input.name,
         price: input.price,
+        categoryId: input.categoryId,
         description: input.description || null,
       },
     });

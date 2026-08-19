@@ -15,7 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Product, ProductForm } from './product-form';
+import { Category, Product, ProductForm } from './product-form';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/' },
@@ -45,6 +45,7 @@ function formatPrice(value: string) {
 
 export function ProductsDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -59,14 +60,24 @@ export function ProductsDashboard() {
 
     async function loadProducts() {
       try {
-        const response = await fetch(`${apiUrl}/api/products`);
+        const [productsResponse, categoriesResponse] = await Promise.all([
+          fetch(`${apiUrl}/api/products`),
+          fetch(`${apiUrl}/api/categories`),
+        ]);
 
-        if (!response.ok) {
+        if (!productsResponse.ok) {
           throw new Error('Products could not be loaded');
         }
 
-        const data = (await response.json()) as Product[];
-        setProducts(data);
+        if (!categoriesResponse.ok) {
+          throw new Error('Categories could not be loaded');
+        }
+
+        const productsData = (await productsResponse.json()) as Product[];
+        const categoriesData = (await categoriesResponse.json()) as Category[];
+
+        setProducts(productsData);
+        setCategories(categoriesData);
       } catch (requestError) {
         setError(
           requestError instanceof Error
@@ -142,8 +153,8 @@ export function ProductsDashboard() {
                       Create product
                     </Dialog.Title>
                     <Dialog.Description className="dialog-description">
-                      Add a product name, price and optional description to the
-                      catalog.
+                      Add a product name, price, category and optional
+                      description to the catalog.
                     </Dialog.Description>
                   </div>
                   <Dialog.Close className="icon-button" aria-label="Close">
@@ -152,6 +163,7 @@ export function ProductsDashboard() {
                 </div>
 
                 <ProductForm
+                  categories={categories}
                   onCancel={() => setIsCreateDialogOpen(false)}
                   onCreated={handleCreated}
                 />
@@ -209,6 +221,7 @@ export function ProductsDashboard() {
                     <tr>
                       <th>Name</th>
                       <th>Price</th>
+                      <th>Category</th>
                       <th>Description</th>
                       <th>Created</th>
                     </tr>
@@ -225,6 +238,9 @@ export function ProductsDashboard() {
                           </div>
                         </td>
                         <td className="price-cell">{formatPrice(product.price)}</td>
+                        <td className="muted-cell">
+                          {product.category?.name ?? 'No category'}
+                        </td>
                         <td className="muted-cell">
                           {product.description || 'No description'}
                         </td>

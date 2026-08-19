@@ -19,6 +19,7 @@ export const createProductSchema = z.object({
       .positive('Product price must be greater than 0')
       .max(999999.99, 'Product price is too high'),
   ),
+  categoryId: z.string().trim().min(1, 'Product category is required'),
   description: z
     .string()
     .trim()

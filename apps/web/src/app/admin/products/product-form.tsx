@@ -24,6 +24,7 @@ const productSchema = z.object({
       .positive('Product price must be greater than 0')
       .max(999999.99, 'Product price is too high'),
   ),
+  categoryId: z.string().trim().min(1, 'Product category is required'),
   description: z
     .string()
     .trim()
@@ -33,16 +34,26 @@ const productSchema = z.object({
 
 type ProductFormValues = z.infer<typeof productSchema>;
 
+export type Category = {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type Product = {
   id: string;
   name: string;
   price: string;
+  categoryId: string;
+  category: Category;
   description: string | null;
   createdAt: string;
   updatedAt: string;
 };
 
 type ProductFormProps = {
+  categories: Category[];
   onCreated?: (product: Product) => void;
   onCancel?: () => void;
 };
@@ -75,7 +86,11 @@ function getErrorMessage(error: unknown) {
   return 'Product was not created';
 }
 
-export function ProductForm({ onCancel, onCreated }: ProductFormProps) {
+export function ProductForm({
+  categories,
+  onCancel,
+  onCreated,
+}: ProductFormProps) {
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -89,6 +104,7 @@ export function ProductForm({ onCancel, onCreated }: ProductFormProps) {
     defaultValues: {
       name: '',
       price: undefined,
+      categoryId: '',
       description: '',
     },
   });
@@ -145,6 +161,29 @@ export function ProductForm({ onCancel, onCreated }: ProductFormProps) {
         />
         {errors.price ? (
           <p className="field-error">{errors.price.message}</p>
+        ) : null}
+      </div>
+
+      <div className="field">
+        <label htmlFor="categoryId">Category</label>
+        <select
+          id="categoryId"
+          aria-invalid={Boolean(errors.categoryId)}
+          disabled={categories.length === 0}
+          {...register('categoryId')}
+        >
+          <option value="">Select category</option>
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+        {errors.categoryId ? (
+          <p className="field-error">{errors.categoryId.message}</p>
+        ) : null}
+        {categories.length === 0 ? (
+          <p className="field-error">Create a category before adding products.</p>
         ) : null}
       </div>
 
