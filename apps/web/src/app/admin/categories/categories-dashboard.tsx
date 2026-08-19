@@ -17,12 +17,12 @@ import {
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { useEffect, useMemo, useState } from 'react';
-import { Category, Product, ProductForm } from './product-form';
+import { Category, CategoryForm } from './category-form';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/' },
-  { label: 'Products', icon: Package, href: '/', active: true },
-  { label: 'Categories', icon: Tag, href: '/admin/categories' },
+  { label: 'Products', icon: Package, href: '/' },
+  { label: 'Categories', icon: Tag, href: '/admin/categories', active: true },
   { label: 'Orders', icon: ShoppingCart, href: '/' },
   { label: 'Inventory', icon: Boxes, href: '/' },
   { label: 'Customers', icon: Users, href: '/' },
@@ -39,51 +39,44 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-function formatPrice(value: string) {
-  return new Intl.NumberFormat('en', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(Number(value));
-}
-
-export function ProductsDashboard() {
-  const [products, setProducts] = useState<Product[]>([]);
+export function CategoriesDashboard() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  const productsWithDescription = useMemo(
-    () => products.filter((product) => product.description).length,
-    [products],
+  const recentlyUpdated = useMemo(
+    () =>
+      categories.filter((category) => category.updatedAt !== category.createdAt)
+        .length,
+    [categories],
   );
 
   useEffect(() => {
-    async function loadProducts() {
+    async function loadCategories() {
       try {
-        const [productsResponse, categoriesResponse] = await Promise.all([
-          apiClient.get<Product[]>('/api/products'),
-          apiClient.get<Category[]>('/api/categories'),
-        ]);
-
-        setProducts(productsResponse.data);
-        setCategories(categoriesResponse.data);
+        const response = await apiClient.get<Category[]>('/api/categories');
+        setCategories(response.data);
       } catch (requestError) {
         setError(
           requestError instanceof Error
             ? requestError.message
-            : 'Products could not be loaded',
+            : 'Categories could not be loaded',
         );
       } finally {
         setIsLoading(false);
       }
     }
 
-    void loadProducts();
+    void loadCategories();
   }, []);
 
-  function handleCreated(product: Product) {
-    setProducts((currentProducts) => [product, ...currentProducts]);
+  function handleCreated(category: Category) {
+    setCategories((currentCategories) =>
+      [category, ...currentCategories].sort((first, second) =>
+        first.name.localeCompare(second.name),
+      ),
+    );
     setIsCreateDialogOpen(false);
   }
 
@@ -122,7 +115,7 @@ export function ProductsDashboard() {
         <header className="admin-topbar">
           <div className="search-box">
             <Search size={18} />
-            <input type="search" placeholder="Search products" />
+            <input type="search" placeholder="Search categories" />
           </div>
           <Dialog.Root
             open={isCreateDialogOpen}
@@ -131,7 +124,7 @@ export function ProductsDashboard() {
             <Dialog.Trigger asChild>
               <button className="button compact" type="button">
                 <Plus size={16} />
-                <span>Add product</span>
+                <span>Add category</span>
               </button>
             </Dialog.Trigger>
             <Dialog.Portal>
@@ -140,11 +133,10 @@ export function ProductsDashboard() {
                 <div className="dialog-header">
                   <div>
                     <Dialog.Title className="dialog-title">
-                      Create product
+                      Create category
                     </Dialog.Title>
                     <Dialog.Description className="dialog-description">
-                      Add a product name, price, category and optional
-                      description to the catalog.
+                      Add a category name to organize products in the catalog.
                     </Dialog.Description>
                   </div>
                   <Dialog.Close className="icon-button" aria-label="Close">
@@ -152,8 +144,7 @@ export function ProductsDashboard() {
                   </Dialog.Close>
                 </div>
 
-                <ProductForm
-                  categories={categories}
+                <CategoryForm
                   onCancel={() => setIsCreateDialogOpen(false)}
                   onCreated={handleCreated}
                 />
@@ -164,23 +155,23 @@ export function ProductsDashboard() {
 
         <section className="admin-page-title">
           <div>
-            <p className="eyebrow">Products</p>
-            <h1>Product catalog</h1>
+            <p className="eyebrow">Categories</p>
+            <h1>Category catalog</h1>
           </div>
         </section>
 
-        <section className="metric-grid" aria-label="Product summary">
+        <section className="metric-grid" aria-label="Category summary">
           <div className="metric-card">
-            <span>Total products</span>
-            <strong>{products.length}</strong>
+            <span>Total categories</span>
+            <strong>{categories.length}</strong>
           </div>
           <div className="metric-card">
-            <span>With description</span>
-            <strong>{productsWithDescription}</strong>
+            <span>Updated categories</span>
+            <strong>{recentlyUpdated}</strong>
           </div>
           <div className="metric-card">
-            <span>Draft fields</span>
-            <strong>{products.length - productsWithDescription}</strong>
+            <span>New categories</span>
+            <strong>{categories.length - recentlyUpdated}</strong>
           </div>
         </section>
 
@@ -189,52 +180,50 @@ export function ProductsDashboard() {
             <div className="panel-heading">
               <div>
                 <p className="eyebrow">Catalog</p>
-                <h2>Products</h2>
+                <h2>Categories</h2>
               </div>
             </div>
 
-            {isLoading ? <p className="panel-state">Loading products...</p> : null}
-            {error ? <p className="field-error">{error}</p> : null}
+            {isLoading ? (
+              <p className="panel-state">Loading categories...</p>
+            ) : null}
+            {error ? <p className="field-error panel-state">{error}</p> : null}
 
-            {!isLoading && !error && products.length === 0 ? (
+            {!isLoading && !error && categories.length === 0 ? (
               <div className="empty-state">
-                <Package size={32} />
-                <h3>No products yet</h3>
-                <p>Create the first product with the Add product button.</p>
+                <Tag size={32} />
+                <h3>No categories yet</h3>
+                <p>Create the first category with the Add category button.</p>
               </div>
             ) : null}
 
-            {products.length > 0 ? (
+            {categories.length > 0 ? (
               <div className="product-table-wrap">
                 <table className="product-table">
                   <thead>
                     <tr>
                       <th>Name</th>
-                      <th>Price</th>
-                      <th>Category</th>
-                      <th>Description</th>
                       <th>Created</th>
+                      <th>Updated</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {products.map((product) => (
-                      <tr key={product.id}>
+                    {categories.map((category) => (
+                      <tr key={category.id}>
                         <td>
                           <div className="product-cell">
                             <span className="product-avatar">
-                              {product.name.slice(0, 1).toUpperCase()}
+                              {category.name.slice(0, 1).toUpperCase()}
                             </span>
-                            <span>{product.name}</span>
+                            <span>{category.name}</span>
                           </div>
                         </td>
-                        <td className="price-cell">{formatPrice(product.price)}</td>
                         <td className="muted-cell">
-                          {product.category?.name ?? 'No category'}
+                          {formatDate(category.createdAt)}
                         </td>
                         <td className="muted-cell">
-                          {product.description || 'No description'}
+                          {formatDate(category.updatedAt)}
                         </td>
-                        <td className="muted-cell">{formatDate(product.createdAt)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -242,7 +231,6 @@ export function ProductsDashboard() {
               </div>
             ) : null}
           </section>
-
         </div>
       </main>
     </div>

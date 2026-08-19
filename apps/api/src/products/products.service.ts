@@ -25,6 +25,9 @@ export class ProductsService {
         categoryId: input.categoryId,
         description: input.description || null,
       },
+      include: {
+        category: true,
+      },
     });
   }
 }

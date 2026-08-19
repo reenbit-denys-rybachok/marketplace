@@ -1,6 +1,8 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { apiClient } from '@/lib/api-client';
+import { isAxiosError } from 'axios';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -59,6 +61,10 @@ type ProductFormProps = {
 };
 
 function getErrorMessage(error: unknown) {
+  if (isAxiosError(error)) {
+    return getErrorMessage(error.response?.data);
+  }
+
   if (
     error &&
     typeof error === 'object' &&
@@ -113,25 +119,17 @@ export function ProductForm({
     setServerMessage(null);
     setServerError(null);
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
-    const response = await fetch(`${apiUrl}/api/products`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(values),
-    });
+    try {
+      const response = await apiClient.post<Product>('/api/products', values);
+      const product = response.data;
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => null);
-      setServerError(getErrorMessage(error));
+      setServerMessage(`Created product: ${product.name}`);
+      onCreated?.(product);
+      reset();
+    } catch (requestError) {
+      setServerError(getErrorMessage(requestError));
       return;
     }
-
-    const product = (await response.json()) as Product;
-    setServerMessage(`Created product: ${product.name}`);
-    onCreated?.(product);
-    reset();
   }
 
   return (
