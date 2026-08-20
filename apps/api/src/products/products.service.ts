@@ -23,6 +23,7 @@ export class ProductsService {
         name: input.name,
         price: input.price,
         categoryId: input.categoryId,
+        imageUrl: input.imageUrl || null,
         description: input.description || null,
       },
       include: {

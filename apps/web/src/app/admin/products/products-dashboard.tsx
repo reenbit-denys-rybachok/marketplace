@@ -210,6 +210,7 @@ export function ProductsDashboard() {
                   <thead>
                     <tr>
                       <th>Name</th>
+                      <th>Image</th>
                       <th>Price</th>
                       <th>Category</th>
                       <th>Description</th>
@@ -226,6 +227,17 @@ export function ProductsDashboard() {
                             </span>
                             <span>{product.name}</span>
                           </div>
+                        </td>
+                        <td>
+                          {product.imageUrl ? (
+                            <img
+                              className="product-thumbnail"
+                              src={product.imageUrl}
+                              alt={product.name}
+                            />
+                          ) : (
+                            <span className="thumbnail-placeholder">No image</span>
+                          )}
                         </td>
                         <td className="price-cell">{formatPrice(product.price)}</td>
                         <td className="muted-cell">

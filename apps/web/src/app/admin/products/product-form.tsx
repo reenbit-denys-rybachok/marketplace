@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { apiClient } from '@/lib/api-client';
 import { isAxiosError } from 'axios';
-import { useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -27,6 +27,7 @@ const productSchema = z.object({
       .max(999999.99, 'Product price is too high'),
   ),
   categoryId: z.string().trim().min(1, 'Product category is required'),
+  imageUrl: z.string().trim().url('Product image must be a valid URL').optional(),
   description: z
     .string()
     .trim()
@@ -47,6 +48,7 @@ export type Product = {
   id: string;
   name: string;
   price: string;
+  imageUrl: string | null;
   categoryId: string;
   category: Category;
   description: string | null;
@@ -99,6 +101,8 @@ export function ProductForm({
 }: ProductFormProps) {
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 
   const {
     register,
@@ -111,20 +115,85 @@ export function ProductForm({
       name: '',
       price: undefined,
       categoryId: '',
+      imageUrl: undefined,
       description: '',
     },
   });
+
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
+    };
+  }, [imagePreviewUrl]);
+
+  function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+    setServerError(null);
+
+    if (!file) {
+      setSelectedImage(null);
+      setImagePreviewUrl(null);
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      setServerError('Only image files are allowed');
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setServerError('Product image must be 5MB or less');
+      event.target.value = '';
+      return;
+    }
+
+    setSelectedImage(file);
+    setImagePreviewUrl((currentPreviewUrl) => {
+      if (currentPreviewUrl) {
+        URL.revokeObjectURL(currentPreviewUrl);
+      }
+
+      return URL.createObjectURL(file);
+    });
+  }
 
   async function onSubmit(values: ProductFormValues) {
     setServerMessage(null);
     setServerError(null);
 
     try {
-      const response = await apiClient.post<Product>('/api/products', values);
+      let imageUrl: string | undefined;
+
+      if (selectedImage) {
+        const formData = new FormData();
+        formData.append('file', selectedImage);
+
+        const uploadResponse = await apiClient.post<{ url: string }>(
+          '/api/uploads/product-image',
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          },
+        );
+
+        imageUrl = uploadResponse.data.url;
+      }
+
+      const response = await apiClient.post<Product>('/api/products', {
+        ...values,
+        imageUrl,
+      });
       const product = response.data;
 
       setServerMessage(`Created product: ${product.name}`);
       onCreated?.(product);
+      setSelectedImage(null);
+      setImagePreviewUrl(null);
       reset();
     } catch (requestError) {
       setServerError(getErrorMessage(requestError));
@@ -182,6 +251,21 @@ export function ProductForm({
         ) : null}
         {categories.length === 0 ? (
           <p className="field-error">Create a category before adding products.</p>
+        ) : null}
+      </div>
+
+      <div className="field">
+        <label htmlFor="image">Product image</label>
+        <input
+          id="image"
+          type="file"
+          accept="image/*"
+          onChange={handleImageChange}
+        />
+        {imagePreviewUrl ? (
+          <div className="image-preview">
+            <img src={imagePreviewUrl} alt="Selected product preview" />
+          </div>
         ) : null}
       </div>
 

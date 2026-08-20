@@ -20,6 +20,7 @@ export const createProductSchema = z.object({
       .max(999999.99, 'Product price is too high'),
   ),
   categoryId: z.string().trim().min(1, 'Product category is required'),
+  imageUrl: z.string().trim().url('Product image must be a valid URL').optional().or(z.literal('')),
   description: z
     .string()
     .trim()

@@ -17,6 +17,15 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5433/marketops_localcraft
 If your database name is different, replace `marketops_localcraft` in the URL.
 The database must exist before running Prisma migrations.
 
+Product images are uploaded to Cloudinary. Configure these variables in
+`apps/api/.env`:
+
+```env
+CLOUDINARY_CLOUD_NAME=""
+CLOUDINARY_API_KEY=""
+CLOUDINARY_API_SECRET=""
+```
+
 ## Start
 
 ```bash
@@ -34,6 +43,7 @@ Default local URLs:
 - API: `http://localhost:4000`
 - Web: `http://localhost:3000`
 - Products API: `http://localhost:4000/api/products`
+- Product image upload API: `http://localhost:4000/api/uploads/product-image`
 
 ## Product Direction
 
