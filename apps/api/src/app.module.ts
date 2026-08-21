@@ -5,12 +5,14 @@ import { CategoriesModule } from './categories/categories.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
+import { OrdersModule } from './orders/orders.module';
 import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
     PrismaModule,
     ProductsModule,
+    OrdersModule,
     CategoriesModule,
     CloudinaryModule,
     UploadsModule,

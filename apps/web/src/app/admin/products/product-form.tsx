@@ -48,6 +48,7 @@ export type Product = {
   id: string;
   name: string;
   price: string;
+  stock: number;
   imageUrl: string | null;
   categoryId: string;
   category: Category;

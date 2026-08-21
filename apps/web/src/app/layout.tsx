@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { RequestLoader } from './request-loader';
+import { Toaster } from 'sonner';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ export default function RootLayout({
       <body>
         <RequestLoader />
         {children}
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   );

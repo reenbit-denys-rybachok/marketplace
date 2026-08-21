@@ -23,7 +23,7 @@ const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/' },
   { label: 'Products', icon: Package, href: '/', active: true },
   { label: 'Categories', icon: Tag, href: '/admin/categories' },
-  { label: 'Orders', icon: ShoppingCart, href: '/' },
+  { label: 'Orders', icon: ShoppingCart, href: '/admin/orders' },
   { label: 'Inventory', icon: Boxes, href: '/' },
   { label: 'Customers', icon: Users, href: '/' },
   { label: 'Analytics', icon: BarChart3, href: '/' },
@@ -95,6 +95,11 @@ export function ProductsDashboard() {
           <span>MarketOps</span>
         </a>
 
+        <a className="sales-channel" href="/store">
+          <Store size={18} />
+          <span>Online Store</span>
+        </a>
+
         <nav className="sidebar-nav" aria-label="Admin navigation">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -111,11 +116,6 @@ export function ProductsDashboard() {
             );
           })}
         </nav>
-
-        <a className="sales-channel" href="/">
-          <Store size={18} />
-          <span>Online Store</span>
-        </a>
       </aside>
 
       <main className="admin-main">
